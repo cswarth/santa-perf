@@ -27,6 +27,8 @@ env = Environment(ENV=environ)
 env.PrependENVPath('PATH', 'bin')
 env['SANTAJAR']= os.path.expanduser('~/Development/santa-sim/target/santa-sim-0.0.1-SNAPSHOT.jar')
 env['SANTACONFIG']= os.path.expanduser('~/Development/santa-sim/examples/small-indel.xml')
+with open(os.path.expanduser('~/Development/santa-sim/cp.txt'), 'r') as fh:
+    env['CLASSPATH']= fh.next().strip()
 
 n = Nest(base_dict={})
 w = SConsWrap(n, 'output', alias_environment=env)
@@ -43,8 +45,7 @@ def santa_lineage(env, outdir, c):
                        [  # santa will produce output files in its current directory.
                           # so need to change to output directory before execution.
                           Copy('${OUTDIR}/santa_config.xml', '${SOURCES[0]}'),
-                          'java -mx512m -jar ${SOURCES[1]} -population=${population} -samplesize=10 -generations=500 -seed=1465407525161 ${OUTDIR}/santa_config.xml',
-                          Copy('${TARGET}', '${OUTDIR}/santa_out.fa')
+                          'java -mx512m -cp ${SOURCES[1]}:${CLASSPATH} santa.simulator.SimulatorMain -population=${population} -samplesize=10 -generations=500 -seed=1465407525161 ${OUTDIR}/santa_config.xml >${TARGET} 2>&1'
                        ])[0]
 
 
