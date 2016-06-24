@@ -33,9 +33,9 @@ with open(os.path.expanduser('~/Development/santa-sim/cp.txt'), 'r') as fh:
 n = Nest(base_dict={})
 w = SConsWrap(n, 'output', alias_environment=env)
 
-n.add('population', [1000, 2000, 3000, 4000, 5000, 6000])
+n.add('population', [1000, 2000, 3000, 4000, 5000, 10000, 50000, 100000], label_func=lambda x: "pop"+str(x))
 
-n.add('generations', [500, 600, 700, 800, 1000])
+n.add('generations', [500, 700, 1000, 10000], label_func=lambda x: "gen"+str(x))
 
 
 @w.add_target_with_env(env)
