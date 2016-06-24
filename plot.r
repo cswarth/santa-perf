@@ -34,12 +34,18 @@ parse.santa <- function(file) {
     # extract the numeric value fron the line.
     delta <- as.numeric(gsub("^.*Memory change:\\s+(\\d+[.]?\\d+).*$", "\\1", line))
 
+    # find the LAST line in the log file that has the words "Time taken"
+    line <- tail(lines[grepl('Time taken', lines)],1)
+
+    # extract the numeric value fron the line.
+    time.taken <- as.numeric(gsub("^.*Time taken:\\s+(\\d+).*$", "\\1", line))
+    
     # split the file path to determine population and generation values
     tokens <- strsplit(file, '/')[[1]]
     generation <- as.integer(gsub('^gen(.*)$', "\\1", tokens[3]))
     population <- as.integer(gsub('^pop(.*)$', "\\1", tokens[2]))
 
-    c(population=population, generation=generation, memory=delta)
+    c(population=population, generation=generation, memory=delta, time=time.taken)
 }
 
 ## find log files
