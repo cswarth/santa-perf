@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from jinja2 import Template
+
+from bokeh.embed import components
+from bokeh.models import Range1d
+from bokeh.resources import INLINE
+from bokeh.util.browser import view
+
 import numpy as np
 import pandas as pd
 import glob
@@ -153,36 +160,131 @@ def scatter_with_hover(df, x, y,
     return fig
 
 
+def plot_lines(df, fig, x, y, group):
+    tmp = df.pivot(index=x, columns=group, values=y)
+    numlines=len(tmp.columns)
+    mypalette=Spectral11[0:numlines]
+    ts_list_of_list = []
+    for i in range(0,len(tmp.columns)):
+        ts_list_of_list.append(tmp.index.T)
+        
+    vals_list_of_list = tmp.values.T.tolist()
+
+    fig.multi_line(ts_list_of_list, vals_list_of_list, line_width=4, line_color=mypalette)
+
+
+
+
+    
+import sys
+from bokeh.palettes import Spectral11
+
+
 def main():
     files = glob.glob('output/*/*/santa.out')
     df = pd.DataFrame.from_records(map(parse_santa, files), columns=Record._fields)
+
+    print(df.head())
+    print(df.pivot(index='population', columns='generation', values='memory').head())
+
     
-    fig = scatter_with_hover(df, "population", "memory", marker='o', fig_width=1000, size=8, fill_color="blue")
+    plots = list()
+
+    fig = figure(title="Population vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'])
+    fig.title.text_font_size='16pt'
+    plot_lines(df, fig, 'population', "memory", 'generation')
+
+    fig = scatter_with_hover(df, "population", "memory", fig, marker='o', size=8, fill_color="blue")
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Population"
-    fig.yaxis.axis_label = "Memory (MB)"
-    save(fig, filename="population_memory.html")
 
-    fig = scatter_with_hover(df, "generation", "memory", marker='o', fig_width=1000, size=8, fill_color="blue")
+    fig.yaxis.axis_label = "Memory (MB)"
+    fig.xaxis.axis_label_text_font_size='16pt'
+    fig.yaxis.axis_label_text_font_size='16pt'
+    plots.append(fig)
+    
+    fig = figure(title="Generations vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'])
+    fig.title.text_font_size='16pt'
+    plot_lines(df, fig, 'generation', "memory", 'population')
+
+    fig = scatter_with_hover(df, "generation", "memory", fig, marker='o', fig_width=1000, size=8, fill_color="blue")
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Generations"
     fig.yaxis.axis_label = "Memory (MB)"
-    save(fig, filename="generation_memory.html")
+    fig.xaxis.axis_label_text_font_size='16pt'
+    fig.yaxis.axis_label_text_font_size='16pt'
+    plots.append(fig)
 
-    fig = scatter_with_hover(df, "population", "time", marker='o', fig_width=1000, size=8, fill_color="blue")
+    fig = figure(title="Population vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'])
+    fig.title.text_font_size='16pt'
+    plot_lines(df, fig, 'population', "time", 'generation')
+
+    fig = scatter_with_hover(df, "population", "time", fig, marker='o', fig_width=1000, size=8, fill_color="blue")
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.yaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Population"
     fig.yaxis.axis_label = "Time (ms)"
-    save(fig, filename="population_time.html")
+    fig.xaxis.axis_label_text_font_size='16pt'
+    fig.yaxis.axis_label_text_font_size='16pt'
+    plots.append(fig)
     
-    fig = scatter_with_hover(df, "generation", "time", marker='o', fig_width=1000, size=8, fill_color="blue")
+    fig = figure(title="Generations vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'])
+    fig.title.text_font_size='16pt'
+    plot_lines(df, fig, 'generation', "time", 'population')
+    fig = scatter_with_hover(df, "generation", "time", fig, marker='o', fig_width=1000, size=8, fill_color="blue")
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.yaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Generation"
     fig.yaxis.axis_label = "Time (ms)"
-    save(fig, filename="generation_time.html")
+    fig.xaxis.axis_label_text_font_size='16pt'
+    fig.yaxis.axis_label_text_font_size='16pt'
+    plots.append(fig)
 
+
+    script, div = components(plots)
+    
+    template = Template('''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bokeh Scatter Plots</title>
+{{ js_resources }}
+{{ css_resources }}
+{{ script }}
+<style>
+.embed-wrapper {
+width: 50%;
+height: 600px;
+margin: auto;
+}
+</style>
+</head>
+<body>
+{% for item in div %}
+<div class="embed-wrapper">
+{{ item }}
+</div>
+{% endfor %}
+</body>
+</html>
+''')
+
+    js_resources = INLINE.render_js()
+    css_resources = INLINE.render_css()
+
+    filename = 'index.html'
+
+    html = template.render(js_resources=js_resources,
+                               css_resources=css_resources,
+                               script=script,
+                               div=div)
+
+    with open(filename, 'w') as f:
+        f.write(html.encode('utf-8'))
+    view(filename)
+
+
+    
 if __name__ == '__main__':
     main()
 
