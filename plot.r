@@ -18,8 +18,12 @@
 # patient-2
 
 
-suppressPackageStartupMessages(library("optparse"))
-library(ggplot2)
+
+
+# install any missing packages
+# http://stackoverflow.com/a/19873732/1135316
+if (!suppressMessages(require("pacman"))) install.packages("pacman")
+suppressPackageStartupMessages(pacman::p_load(optparse, ggplot2, ggvis, dplyr, htmltools))
 
 # given a filename, parse relevant info from the file and
 # return a vector of values
@@ -48,6 +52,37 @@ parse.santa <- function(file) {
     c(population=population, generation=generation, memory=delta, time=time.taken)
 }
 
+add_title <- function(vis, ..., properties=NULL, title = "Plot Title") 
+{
+    # recursively merge lists by name
+    # http://stackoverflow.com/a/13811666/1135316
+    merge.lists <- function(a, b) {
+        a.names <- names(a)
+        b.names <- names(b)
+        m.names <- sort(unique(c(a.names, b.names)))
+        sapply(m.names, function(i) {
+                   if (is.list(a[[i]]) & is.list(b[[i]])) merge.lists(a[[i]], b[[i]])
+                   else if (i %in% b.names) b[[i]]
+                   else a[[i]]
+               }, simplify = FALSE)
+    }
+
+    # default properties make title 'axis' invisible
+    default.props <- axis_props(
+        ticks = list(strokeWidth=0),
+        axis = list(strokeWidth=0),
+        labels = list(fontSize = 0),
+        grid = list(strokeWidth=0)
+        )
+    # merge the default properties with user-supplied props.
+    axis.props <- do.call(axis_props, merge.lists(default.props, properties))
+
+    # don't step on existing scales.
+    vis <- scale_numeric(vis, "title", domain = c(0,1), range = 'width')
+    axis <- ggvis:::create_axis('x', 'title', orient = "top",  title = title, properties = axis.props, ...)
+    ggvis:::append_ggvis(vis, "axes", axis)
+}
+
 ## find log files
 ## extract data
 ## build dataframe
@@ -63,12 +98,42 @@ main <- function(args) {
     # files <- arguments$args
 
     files = list.files("output", 'santa.out', full.names=TRUE, recursive=TRUE)
+    df <- data.frame(t(sapply(files, parse.santa)))  %>% mutate(id=1:nrow(.)) %>% mutate(generation=factor(generation))
 
-    df <- t(sapply(files, parse.santa))
 
+    # function for displaying hover text
+    hover_text <- function(x) {
+        if(is.null(x)) return(NULL)
+        row <- df %>% filter(id==x$id)
+        text <- as.character(withTags( 
+            table(class='hover',
+                  tr(td("Memory:"),td(style=css(text.align="right"), paste0(row$memory, " MB"))),
+                  tr(td("Population:"),td(style=css(text.align="right"), row$population)),
+                  tr(td("Generations:"),td(style=css(text.align="right"), row$generation)))))
+        return(text)
+    }
     
+    # Larger point and outline when hovering
+    df %>% 
+        ggvis(x = ~population, key := ~id,
+              size.hover := 200, stroke := NA,
+              stroke.hover := "red", strokeWidth := 3) %>%
+        layer_points(y = ~memory, fill = ~generation) %>%
+        add_axis("y", title = "Memory (MB)", title_offset=50, properties = axis_props(title=list(fontSize=16))) %>%
+        add_axis("x", title = "Population", title_offset=40,
+                 properties = axis_props(title=list(fontSize=16),
+                     labels = list(fontSize = 12))) %>%
+        add_title(title = "Memory Size as a function of Population",
+                  properties = axis_props(title=list(fontSize=20))) %>%
+        add_legend(scales=c("fill"), title="Generations") %>%
+        export_svg(file = "plot.svg")
+    # %>% add_tooltip(hover_text, "hover")
+
 }
 
 
 
 main(commandArgs(trailingOnly = TRUE))
+
+
+
