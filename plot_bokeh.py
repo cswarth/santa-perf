@@ -7,6 +7,7 @@ from bokeh.embed import components
 from bokeh.models import Range1d
 from bokeh.resources import INLINE
 from bokeh.util.browser import view
+from bokeh.models import Legend
 
 import numpy as np
 import pandas as pd
@@ -77,105 +78,35 @@ def parse_santa(file):
     return Record(population, generation, memory, time)
 
 
-def scatter_with_hover(df, x, y,
-                       fig=None, cols=None, name=None, marker='x',
-                       fig_width=500, fig_height=500, **kwargs):
-    """
-    Plots an interactive scatter plot of `x` vs `y` using bokeh, with automatic
-    tooltips showing columns from `df`.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        DataFrame containing the data to be plotted
-    x : str
-        Name of the column to use for the x-axis values
-    y : str
-        Name of the column to use for the y-axis values
-    fig : bokeh.plotting.Figure, optional
-        Figure on which to plot (if not given then a new figure will be created)
-    cols : list of str
-        Columns to show in the hover tooltip (default is to show all)
-    name : str
-        Bokeh series name to give to the scattered data
-    marker : str
-        Name of marker to use for scatter plot
-    **kwargs
-        Any further arguments to be passed to fig.scatter
-
-    Returns
-    -------
-    bokeh.plotting.Figure
-        Figure (the same as given, or the newly created figure)
-
-    Example
-    -------
-    fig = scatter_with_hover(df, 'A', 'B')
-    show(fig)
-
-    fig = scatter_with_hover(df, 'A', 'B', cols=['C', 'D', 'E'], marker='x', color='red')
-    show(fig)
-
-    Author
-    ------
-    Robin Wilson <robin@rtwilson.com>
-    with thanks to Max Albert for original code example
-    """
-
-    # If we haven't been given a Figure obj then create it with default
-    # size etc.
-    if fig is None:
-        fig = figure(width=fig_width, height=fig_height, tools=['box_zoom', 'reset'])
-
-    # We're getting data from the given dataframe
-    source = ColumnDataSource(data=df)
-
-    # We need a name so that we can restrict hover tools to just this
-    # particular 'series' on the plot. You can specify it (in case it
-    # needs to be something specific for other reasons), otherwise
-    # we just use 'main'
-    if name is None:
-        name = 'main'
-
-    # Actually do the scatter plot - the easy bit
-    # (other keyword arguments will be passed to this function)
-    fig.scatter(df[x], df[y], source=source, name=name, marker=marker, **kwargs)
-
-    # Now we create the hover tool, and make sure it is only active with
-    # the series we plotted in the previous line
-    hover = HoverTool(names=[name])
-
-    if cols is None:
-        # Display *all* columns in the tooltips
-        hover.tooltips = [(c, '@' + c) for c in df.columns]
-    else:
-        # Display just the given columns in the tooltips
-        hover.tooltips = [(c, '@' + c) for c in cols]
-
-    hover.tooltips.append(('index', '$index'))
-
-    # Finally add/enable the tool
-    fig.add_tools(hover)
-
-    return fig
-
 
 def plot_lines(df, fig, x, y, group):
-    tmp = df.pivot(index=x, columns=group, values=y)
-    numlines=len(tmp.columns)
-    mypalette=Spectral11[0:numlines]
-    ts_list_of_list = []
-    for i in range(0,len(tmp.columns)):
-        ts_list_of_list.append(tmp.index.T)
+    legends = []
+    groups = df.groupby(by=[group])
+    numlines = len(groups)
+    colors=Spectral11[0:numlines]
+    for i, (key, grp) in enumerate(groups):
+        grp = grp.sort_values(by=x,axis=0)
+        name = str(key)
+        source = ColumnDataSource(data=grp)
+        line = fig.line(x, y,  source=source, line_width=4, line_color=colors[i])
+        point = fig.circle(x, y,  source=source, name=name, size=8, fill_color=colors[i])
+        legends.append((name, [line]))
+
+        hover = HoverTool(names=[name])
+        hover.tooltips = [(c, '@' + c) for c in grp.columns]
+        hover.tooltips.append(('index', '$index'))
+        fig.add_tools(hover)
+
+    # place a legend outside the plot area
+    # http://bokeh.pydata.org/en/dev/docs/user_guide/styling.html#outside-the-plot-area
+    legend = Legend(legends=legends, location=(0, -30), name="foppo")
+
+    fig.add_layout(legend, 'right')
+
+
+    return fig
         
-    vals_list_of_list = tmp.values.T.tolist()
-
-    fig.multi_line(ts_list_of_list, vals_list_of_list, line_width=4, line_color=mypalette)
-
-
-
-
-    
+     
 import sys
 from bokeh.palettes import Spectral11
 
@@ -184,60 +115,58 @@ def main():
     files = glob.glob('output/*/*/santa.out')
     df = pd.DataFrame.from_records(map(parse_santa, files), columns=Record._fields)
 
-    print(df.head())
-    print(df.pivot(index='population', columns='generation', values='memory').head())
-
-    
     plots = list()
 
-    fig = figure(title="Population vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'])
+    fig = figure(title="Population vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
     plot_lines(df, fig, 'population', "memory", 'generation')
-
-    fig = scatter_with_hover(df, "population", "memory", fig, marker='o', size=8, fill_color="blue")
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Population"
-
     fig.yaxis.axis_label = "Memory (MB)"
     fig.xaxis.axis_label_text_font_size='16pt'
     fig.yaxis.axis_label_text_font_size='16pt'
+    fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
+
     plots.append(fig)
     
-    fig = figure(title="Generations vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'])
+    
+    fig = figure(title="Generations vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
     plot_lines(df, fig, 'generation', "memory", 'population')
-
-    fig = scatter_with_hover(df, "generation", "memory", fig, marker='o', fig_width=1000, size=8, fill_color="blue")
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Generations"
     fig.yaxis.axis_label = "Memory (MB)"
     fig.xaxis.axis_label_text_font_size='16pt'
     fig.yaxis.axis_label_text_font_size='16pt'
+    fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
+
     plots.append(fig)
 
-    fig = figure(title="Population vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'])
+    fig = figure(title="Population vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
     plot_lines(df, fig, 'population', "time", 'generation')
-
-    fig = scatter_with_hover(df, "population", "time", fig, marker='o', fig_width=1000, size=8, fill_color="blue")
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.yaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Population"
     fig.yaxis.axis_label = "Time (ms)"
     fig.xaxis.axis_label_text_font_size='16pt'
     fig.yaxis.axis_label_text_font_size='16pt'
+    fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
+    fig.yaxis.formatter = NumeralTickFormatter(format="0,0")
+
     plots.append(fig)
     
-    fig = figure(title="Generations vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'])
+    fig = figure(title="Generations vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
     plot_lines(df, fig, 'generation', "time", 'population')
-    fig = scatter_with_hover(df, "generation", "time", fig, marker='o', fig_width=1000, size=8, fill_color="blue")
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.yaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Generation"
     fig.yaxis.axis_label = "Time (ms)"
     fig.xaxis.axis_label_text_font_size='16pt'
     fig.yaxis.axis_label_text_font_size='16pt'
+    fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
+    fig.yaxis.formatter = NumeralTickFormatter(format="0,0")
     plots.append(fig)
 
 
