@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# to deploy to gh-pages, use the function `gh=deploy` defined in ~.bash_profile
+# first copy index.html tp the `site/` directory
+# Cribbed from https://gist.github.com/cobyism/4730490
+#    git subtree push --prefix site origin gh-pages
 
 from __future__ import print_function
 from jinja2 import Template
@@ -19,43 +23,6 @@ import collections
 from bokeh.plotting import figure, ColumnDataSource, show, save
 from bokeh.models import HoverTool
 from bokeh.models import NumeralTickFormatter
-
-
-
-# Create plots of sample counts and add them to the zip file.
-def make_plot(results, plate):
-    def logratio(x):
-        m = x.reads.mean()
-        d = x.reads/m
-        return np.sign(d)*np.log2(np.abs(d))
-
-    s = StringIO()
-    clean = plate['all_zones']['clean']
-    if 'samples' not in clean:
-        return ''
-
-    samples = sorted(clean['samples']['counts'].iteritems())
-    df = pd.DataFrame(samples, columns=['sample', 'reads'])
-
-    tmp = (df.join(df['sample'].str.extract('p(?P<plateno>\d+)(?P<direction>d\d+)bc(?P<barcode>\d+)', expand=False))
-       .assign(direction=lambda x: ["forward" if d == "d1" else "reverse" for d in x.direction])
-       .assign(label=lambda x: ["bc {}".format(bc) for bc in x.barcode])
-       .assign(fc=logratio)
-       .assign(x=lambda x: np.arange(x.shape[0])))
-    sns.set_style("whitegrid")
-
-    g = sns.FacetGrid(tmp, hue="direction",  size=6, aspect=1.5)
-    g.map(plt.scatter, "x", "fc", s=30, alpha=.6)
-    g.set_axis_labels('', 'Fold change (compared to mean)')
-
-    axis = g.axes[0][0]
-    axis.get_xaxis().set_visible(False)
-    labels = tmp.query("fc > 2 | fc < -2")
-    for i, row in labels.iterrows():
-        axis.annotate(row.label, (row.x, row.fc), 
-                      xytext=(row.x+3.2, row.fc), fontsize=12)
-    plt.savefig(s)
-    return s.getvalue()
 
 
 Record = collections.namedtuple('Record', 'population generation memory time')
@@ -210,6 +177,12 @@ margin: auto;
 
     with open(filename, 'w') as f:
         f.write(html.encode('utf-8'))
+
+    # to deploy to gh-pages, use the function `gh=deploy` defined in ~.bash_profile
+    # first copy index.html tp the `site/` directory
+    # Cribbed from https://gist.github.com/cobyism/4730490
+    #    git subtree push --prefix site origin gh-pages
+
     view(filename)
 
 
