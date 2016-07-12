@@ -24,8 +24,8 @@ deploy:
              env | grep WERCKER
              pwd
              echo foo
-             echo ls -l  "$WERCKER_SOURCE_DIR/$WERCKER_OUTPUT_DIR"
-             ls -l  "$WERCKER_SOURCE_DIR/$WERCKER_OUTPUT_DIR"
+             echo ls -l  "$WERCKER_OUTPUT_DIR"
+             ls -l  "$WERCKER_OUTPUT_DIR"
              echo bar
     
     - ematsen/gh-pages:
