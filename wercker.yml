@@ -1,0 +1,37 @@
+
+box: continuumio/miniconda
+
+# comment
+build:
+  steps:
+    - script:
+        name: Install dependencies
+        code: |
+                conda install -y pandas jinja2 bokeh
+
+    - script:
+        name: convert to html
+        code: |
+          ./plot_bokeh.py santa.csv "$WERCKER_OUTPUT_DIR/index.html"
+
+dev:
+  steps:
+    - script:
+        name: Install dependencies
+        code: |
+                conda install -y pandas jinja2 bokeh
+
+    - script:
+        name: convert to html
+        code: |
+          ./plot_bokeh.py santa.csv "$WERCKER_OUTPUT_DIR/index.html"
+
+#        - lukevivier/gh-pages:
+deploy:
+  steps:
+    - lukevivier/gh-pages:
+        token: $GITHUB_TOKEN
+        repo: "$WERCKER_GIT_OWNER/$WERCKER_GIT_REPOSITORY"
+        basedir: site
+        path: "$WERCKER_OUTPUT_DIR"
+        

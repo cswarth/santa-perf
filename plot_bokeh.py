@@ -5,44 +5,26 @@
 #    git subtree push --prefix site origin gh-pages
 
 from __future__ import print_function
-from jinja2 import Template
 
 from bokeh.embed import components
-from bokeh.models import Range1d
-from bokeh.resources import INLINE
+from bokeh.resources import CDN
 from bokeh.util.browser import view
 from bokeh.models import Legend
-
-import numpy as np
-import pandas as pd
-import glob
-from cStringIO import StringIO
-import re
-import collections
-
-from bokeh.plotting import figure, ColumnDataSource, show, save
+from bokeh.plotting import figure, ColumnDataSource
 from bokeh.models import HoverTool
 from bokeh.models import NumeralTickFormatter
+from bokeh.palettes import Spectral11
 
+import os
+import sys
+import getpass
+import argparse
+import datetime
+import collections
+import pandas as pd
+from cStringIO import StringIO
+from jinja2 import Environment, FileSystemLoader
 
-Record = collections.namedtuple('Record', 'population generation memory time')
-
-def parse_santa(file):
-    memory = 0
-    with open(file,'r') as fh:
-        for line in fh:
-            m = re.match('^.*Memory change:\\s+(\\d+[.]?\\d+).*$', line)
-            if m:
-                memory = float(m.group(1))
-            m = re.match("^.*Time taken:\\s+(\\d+).*$", line)
-            if m:
-                time = int(m.group(1))
-    # split the file path to determine population and generation values
-    tokens = file.split('/')
-    m = re.match('^.*pop(\\d+).*/gen(\\d+).*$', file)
-    population = int(m.group(1))
-    generation = int(m.group(2))
-    return Record(population, generation, memory, time)
 
 
 
@@ -73,15 +55,7 @@ def plot_lines(df, fig, x, y, group):
 
     return fig
         
-     
-import sys
-from bokeh.palettes import Spectral11
-
-
-def main():
-    files = glob.glob('output/*/*/santa.out')
-    df = pd.DataFrame.from_records(map(parse_santa, files), columns=Record._fields)
-
+def mkplots(df):
     plots = list()
 
     fig = figure(title="Population vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
@@ -136,54 +110,53 @@ def main():
     fig.yaxis.formatter = NumeralTickFormatter(format="0,0")
     plots.append(fig)
 
+    return plots
+
+# Capture our current directory
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.stdin)
+    p.add_argument('outfile', nargs='?', default="site/index.html")
+    p.add_argument('-t', '--template', default='template.jinja',
+            help="""Jinja2 Tempate file[default: %(default)]""")
+    p.add_argument('-v', '--view', default=False,
+            help="""Launch browser to view output: %(default)]""")
+    a = p.parse_args()
+
+    df = pd.read_csv(a.infile)
+
+    plots = mkplots(df)
 
     script, div = components(plots)
     
-    template = Template('''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Bokeh Scatter Plots</title>
-{{ js_resources }}
-{{ css_resources }}
-{{ script }}
-<style>
-.embed-wrapper {
-width: 50%;
-height: 600px;
-margin: auto;
-}
-</style>
-</head>
-<body>
-{% for item in div %}
-<div class="embed-wrapper">
-{{ item }}
-</div>
-{% endfor %}
-</body>
-</html>
-''')
+    js_resources = CDN.render_js()
+    css_resources = CDN.render_css()
+    env = Environment(loader=FileSystemLoader(THIS_DIR),
+                          trim_blocks=True)
+    # Alias str.format to strformat in template
+    env.filters['strformat'] = str.format
+    template = env.get_template(a.template)
 
-    js_resources = INLINE.render_js()
-    css_resources = INLINE.render_css()
+    html = template.render( date=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            command=" ".join(sys.argv),
+                            workdir=os.getcwd(),
+                            user=getpass.getuser(),
+                            js_resources=js_resources,
+                            css_resources=css_resources,
+                            script=script,
+                            div=div)
 
-    filename = 'index.html'
-
-    html = template.render(js_resources=js_resources,
-                               css_resources=css_resources,
-                               script=script,
-                               div=div)
-
-    with open(filename, 'w') as f:
+    with open(a.outfile, "w") as f:
         f.write(html.encode('utf-8'))
 
     # to deploy to gh-pages, use the function `gh=deploy` defined in ~.bash_profile
     # first copy index.html tp the `site/` directory
     # Cribbed from https://gist.github.com/cobyism/4730490
     #    git subtree push --prefix site origin gh-pages
-
-    view(filename)
+    if a.view:
+        view(a.outfile)
 
 
     
