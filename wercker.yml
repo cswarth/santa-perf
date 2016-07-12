@@ -31,5 +31,5 @@ deploy:
     - ematsen/gh-pages:
         token: $GITHUB_TOKEN
         repo: "$WERCKER_GIT_OWNER/$WERCKER_GIT_REPOSITORY"
-        path: "$WERCKER_OUTPUT_DIR"
+        path: "$WERCKER_SOURCE_DIR"
         
