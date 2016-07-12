@@ -25,7 +25,7 @@ import pandas as pd
 from cStringIO import StringIO
 from jinja2 import Environment, FileSystemLoader
 
-
+from collections import OrderedDict
 
 
 def plot_lines(df, fig, x, y, group):
@@ -56,7 +56,7 @@ def plot_lines(df, fig, x, y, group):
     return fig
         
 def mkplots(df):
-    plots = list()
+    plots = OrderedDict()
 
     fig = figure(title="Population vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
@@ -67,9 +67,7 @@ def mkplots(df):
     fig.xaxis.axis_label_text_font_size='16pt'
     fig.yaxis.axis_label_text_font_size='16pt'
     fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
-
-    plots.append(fig)
-    
+    plots[fig.title.text] = fig
     
     fig = figure(title="Generations vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
@@ -80,8 +78,7 @@ def mkplots(df):
     fig.xaxis.axis_label_text_font_size='16pt'
     fig.yaxis.axis_label_text_font_size='16pt'
     fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
-
-    plots.append(fig)
+    plots[fig.title.text] = fig
 
     fig = figure(title="Population vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
@@ -94,9 +91,8 @@ def mkplots(df):
     fig.yaxis.axis_label_text_font_size='16pt'
     fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
     fig.yaxis.formatter = NumeralTickFormatter(format="0,0")
+    plots[fig.title.text] = fig
 
-    plots.append(fig)
-    
     fig = figure(title="Generations vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
     plot_lines(df, fig, 'generation', "time", 'population')
@@ -108,7 +104,7 @@ def mkplots(df):
     fig.yaxis.axis_label_text_font_size='16pt'
     fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
     fig.yaxis.formatter = NumeralTickFormatter(format="0,0")
-    plots.append(fig)
+    plots[fig.title.text] = fig
 
     return plots
 
@@ -143,6 +139,7 @@ def main():
                             command=" ".join(sys.argv),
                             workdir=os.getcwd(),
                             user=getpass.getuser(),
+                            title="Santa Performance Plots",
                             js_resources=js_resources,
                             css_resources=css_resources,
                             script=script,
