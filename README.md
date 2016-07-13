@@ -7,7 +7,7 @@
 
 [![Wercker Build Widget]][Wercker Application]
 
- Scripts and graphs for exploring Santa memory and runtime performance.
+ Scripts and graphs for exploring [SANTA][SANTA Repo] memory and runtime performance.
 
 `SConstruct` is an `SCons` configuration file used to configure and run multiple instances of `SANTA` and collect performance measures.
 The `Nestly` extension to `SCons` is used to explore the parameter space of population size and number of generations.
