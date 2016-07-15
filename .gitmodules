@@ -1,3 +1,4 @@
 [submodule "santa-sim"]
 	path = santa-sim
 	url = git@github.com:santa-dev/santa-sim.git
+	branch = csw-indels
