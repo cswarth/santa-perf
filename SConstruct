@@ -22,7 +22,7 @@ environ = os.environ.copy()
 env = Environment(ENV=environ)
 env.PrependENVPath('PATH', os.path.abspath('santa-sim/target'))
 env.PrependENVPath('PATH', 'bin')
-env['SANTAJAR']= os.path.abspath('santa-sim/target/santa-sim-0.0.1-SNAPSHOT.jar')
+env['SANTAJAR']= os.path.abspath('santa-sim/dist/santa.jar')
 env['SANTACONFIG']= 'santa_config.xml'
 
 n = Nest(base_dict={})
@@ -51,8 +51,10 @@ def santa_lineage(env, outdir, c):
                        [ c['logconfig'], c['config'], env['SANTAJAR'] ],
                        [  # santa will produce output files in its current directory.
                           # so need to change to output directory before execution.
-                          'java_args="-mx512m -Djava.util.logging.config.file=${SOURCES[0].file}" santa -population=${population} -samplesize=10 -generations=${generations} -seed=1465407525161 ${SOURCES[1].file} >${TARGET.file} 2>&1'
+                          'java -mx512m -Djava.util.logging.config.file=${SOURCES[0].file} -jar ${SANTAJAR} -population=${population} -samplesize=10 -generations=${generations} -seed=1465407525161 ${SOURCES[1].file} >${TARGET.file} 2>&1'
                        ], chdir=1)[0]
+
+#                          'java_args="-mx512m -Djava.util.logging.config.file=${SOURCES[0].file}" santa -population=${population} -samplesize=10 -generations=${generations} -seed=1465407525161 ${SOURCES[1].file} >${TARGET.file} 2>&1'
 
 
 # @w.add_target_with_env(env)
