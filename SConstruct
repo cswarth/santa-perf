@@ -31,7 +31,7 @@ env['SANTACONFIG']= 'santa_config.xml'
 n = Nest(base_dict={})
 w = SConsWrap(n, 'output', alias_environment=env)
 
-n.add('population', [1000, 3000, 5000, 7000, 10000, 15000, 20000, 50000], label_func=lambda x: "pop"+str(x))
+n.add('population', [1000, 3000, 5000, 7000, 10000, 15000, 20000, 30000, 40000, 50000], label_func=lambda x: "pop"+str(x))
 
 n.add('length', [50, 100, 500, 1000, 1533], label_func=lambda x: "len"+str(x))
 

@@ -12,7 +12,7 @@ build:
     - script:
         name: convert to html
         code: |
-          ./plot_bokeh.py santa.csv "$WERCKER_OUTPUT_DIR/index.html"
+          ./plot_bokeh.py results.csv "$WERCKER_OUTPUT_DIR/index.html"
           cp dashboard.css "$WERCKER_OUTPUT_DIR/"
 
 #        - lukevivier/gh-pages:
