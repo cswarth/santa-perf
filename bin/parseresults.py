@@ -11,6 +11,7 @@ import argparse
 import pandas as pd
 import time as _time
 import datetime
+from datetime import timedelta
 
 
 Record = collections.namedtuple('Record', 'population length memory time')
@@ -29,12 +30,20 @@ def parse_results(file, verbose=False):
 
 
 def parse_memory(file, verbose=False):
+    """
+    Extract memory statistics from SANTA output.
+
+    Looks for lines like "Memory used = 1.6 MiB" and parses both the
+    numeric value and the units (which may vary).
+
+    Returns integer number of bytes used after accounting for
+    units.
+    """
     memory = None
     try:
         with open(file,'r') as fh:
             for line in fh:
-                m = re.match(r'^Memory used\s+=\s+(\d+[.\d+]?)\s+(.*)$', line)
-                m = re.match(r'^Memory used\s+=\s+(\d+(\.\d+)?)\s+(.*)', line)
+                m = re.match(r'^Memory used\s+=\s+(\d+(\.\d+)?)\s+(.*)$', line)
                 if m:
                     memory = float(m.group(1))
                     units = m.group(3)
@@ -51,44 +60,27 @@ def parse_memory(file, verbose=False):
 def parse_time(file):
     """
     parse the output of `time --verbose` to extract the elapsed wall clock time.
-    """        
-    # Command being timed: "java -mx512m -Djava.util.logging.config.file=logging.properties -jar /shared/silo_researcher/Matsen_F/MatsenGrp/working/cwarth/santa-wercker/dist/santa.jar -population=1000 -samplesize=10 -generations=10000 -seed=1465407525161 santa_config.xml"
-    # User time (seconds): 63.32
-    # System time (seconds): 0.71
-    # Percent of CPU this job got: 248%
-    # Elapsed (wall clock) time (h:mm:ss or m:ss): 0:25.80
-    # Average shared text size (kbytes): 0
-    # Average unshared data size (kbytes): 0
-    # Average stack size (kbytes): 0
-    # Average total size (kbytes): 0
-    # Maximum resident set size (kbytes): 130164
-    # Average resident set size (kbytes): 0
-    # Major (requiring I/O) page faults: 0
-    # Minor (reclaiming a frame) page faults: 100269
-    # Voluntary context switches: 23123
-    # Involuntary context switches: 10442
-    # Swaps: 0
-    # File system inputs: 0
-    # File system outputs: 544
-    # Socket messages sent: 0
-    # Socket messages received: 0
-    # Signals delivered: 0
-    # Page size (bytes): 4096
-    # Exit status: 0
 
+    Looks for lines like "Elapsed (wall clock) time (h:mm:ss or m:ss): 0:25.80" and parses the time signature.
+
+    Returns real value seconds.
+    """        
     elapsed = None
     try:
         with open(file,'r') as fh:
             for line in fh:
-                m = re.match(r'^.*wall\s+clock.*:\s+(.*)', line)
+                m = re.match(r'^.*wall\s+clock.*:\s+(?P<timestr>.*)', line)
                 if m:
-                    # save elapsed time as string formatted seconds
                     # note: don't parse with `time` package, as
                     # time-tuples don't carry microseconds and won't
                     # understand '%f' formatting.  Use datetime package instead.
-                
-                    elapsed = datetime.datetime.strptime(m.group(1), '%M:%S.%f')
-                    elapsed = elapsed.strftime('%S.%f')
+                    d = re.match(r'((?P<hours>\d+):)?(?P<minutes>\d+):(?P<seconds>\d+)(\.(?P<microseconds>\d+))?', m.group('timestr'))
+                    d = dict([(k, int(v)) for (k,v) in d.groupdict().iteritems() if v])
+
+                    # have to fixup fractional seconds into microseconds.
+                    if d.get('microseconds'):
+                        d['microseconds'] = (d['microseconds']/100.0)*1e6
+                    elapsed = timedelta(**d).total_seconds()
                     break
     except IOError:
         pass
