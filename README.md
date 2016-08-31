@@ -7,9 +7,18 @@
 
 [![Wercker Build Widget]][Wercker Application]
 
-![Grouped by population size](figures/bypopulation.png =800x500)
+This repo hold scripts related to measuring memory and run time performance of [SANTA][SANTA Repo], a forward-in-time viral evolution simulator.
+
+#Methodology
+
+Multiple SANTA simulations are configured with a range of population sizes and genome lengths.  Memory footprint and elapsed wallclock time are collected for each simulation and the results are plotted below.  All simulations are configured to run for 10,000 generations under neutral selection without fitness constriants, and without actually sampling any of the simulated sequences.
+
+The graphs below show that genome length is not correlated with total elapsed run time.  Unsurprisingly total run time is almost exclusively determined by population size.
+
+<img src="figures/bypopulation.png" width="800">
 <br>
-![Grouped by sequence length](figures/byseqlen.png =800x500)
+<img src="figures/byseqlen.png" width="800">
+
 
 ## Basic usage
 
