@@ -60,7 +60,7 @@ def mkplots(df):
 
     fig = figure(title="Population vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
-    plot_lines(df, fig, 'population', "memory", 'generation')
+    plot_lines(df, fig, 'population', "memory", 'length')
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Population"
     fig.yaxis.axis_label = "Memory (MB)"
@@ -69,11 +69,11 @@ def mkplots(df):
     fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
     plots[fig.title.text] = fig
     
-    fig = figure(title="Generations vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
+    fig = figure(title="Genome length vs. Memory", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
-    plot_lines(df, fig, 'generation', "memory", 'population')
+    plot_lines(df, fig, 'length', "memory", 'population')
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
-    fig.xaxis.axis_label = "Generations"
+    fig.xaxis.axis_label = "Length"
     fig.yaxis.axis_label = "Memory (MB)"
     fig.xaxis.axis_label_text_font_size='16pt'
     fig.yaxis.axis_label_text_font_size='16pt'
@@ -82,7 +82,7 @@ def mkplots(df):
 
     fig = figure(title="Population vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
     fig.title.text_font_size='16pt'
-    plot_lines(df, fig, 'population', "time", 'generation')
+    plot_lines(df, fig, 'population', "time", 'length')
     fig.xaxis.formatter=NumeralTickFormatter(format="00")
     fig.yaxis.formatter=NumeralTickFormatter(format="00")
     fig.xaxis.axis_label = "Population"
@@ -93,23 +93,11 @@ def mkplots(df):
     fig.yaxis.formatter = NumeralTickFormatter(format="0,0")
     plots[fig.title.text] = fig
 
-    fig = figure(title="Generations vs. Time", width=1000, height=500, tools=['box_zoom', 'reset'], toolbar_location="above")
-    fig.title.text_font_size='16pt'
-    plot_lines(df, fig, 'generation', "time", 'population')
-    fig.xaxis.formatter=NumeralTickFormatter(format="00")
-    fig.yaxis.formatter=NumeralTickFormatter(format="00")
-    fig.xaxis.axis_label = "Generation"
-    fig.yaxis.axis_label = "Time (ms)"
-    fig.xaxis.axis_label_text_font_size='16pt'
-    fig.yaxis.axis_label_text_font_size='16pt'
-    fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
-    fig.yaxis.formatter = NumeralTickFormatter(format="0,0")
-    plots[fig.title.text] = fig
 
     return plots
 
-# Capture our current directory
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+# Capture parent directory above 'templates/'
+THIS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 def main():
     p = argparse.ArgumentParser()

@@ -23,24 +23,24 @@ suppressWarnings(library(ggplot2))
 
 
 df <- read_csv('results.csv')
-df <- df %>% filter(complete.cases(.)) %>% mutate(population=factor(population)) %>% mutate(length=factor(length))
-ggplot(df, aes(x=length, y=time, color=population, group=population)) + 
+df <- df %>% filter(complete.cases(.)) %>% mutate(fpop=factor(population), flen=factor(length))
+ggplot(df, aes(x=length, y=time, color=fpop, group=fpop)) + 
   theme_bw() + 
   labs(title='Run time as function of sequence length') +
   xlab('Sequence length (nt)') +
   ylab('Run time (sec)') +
-  geom_line(aes(color=population), size=1) + 
-  geom_point(aes(color=population),size=1.1) +
+  geom_line(size=1) + 
+  geom_point(size=1.1) +
   labs(color = "Population size")
 ggsave(filename='bypopulation.png', width=8, height=5, units='in')
 
-ggplot(df, aes(x=population, y=time, color=length, group=length)) + 
+ggplot(df, aes(x=population, y=time, color=flen, group=flen)) + 
   theme_bw() + 
   labs(title='Runtime as function of population size') +
   xlab('Population size') +
   ylab('Runtime (sec)') +
-  geom_line(aes(color=length), size=1) + 
-  geom_point(aes(color=length),size=1.1) +
+  geom_line(size=1) + 
+  geom_point(size=1.1) +
   labs(color = "Sequence len")
 ggsave(filename='byseqlen.png', width=8, height=5, units='in')
 
