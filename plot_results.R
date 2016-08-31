@@ -32,7 +32,7 @@ ggplot(df, aes(x=length, y=time, color=population, group=population)) +
   geom_line(aes(color=population), size=1) + 
   geom_point(aes(color=population),size=1.1) +
   labs(color = "Population size")
-ggsave(filename='bypopulation.png', width=4, height=3, units='in')
+ggsave(filename='bypopulation.png', width=8, height=5, units='in')
 
 ggplot(df, aes(x=population, y=time, color=length, group=length)) + 
   theme_bw() + 
@@ -42,7 +42,7 @@ ggplot(df, aes(x=population, y=time, color=length, group=length)) +
   geom_line(aes(color=length), size=1) + 
   geom_point(aes(color=length),size=1.1) +
   labs(color = "Sequence len")
-ggsave(filename='byseqlen.png', width=4, height=3, units='in')
+ggsave(filename='byseqlen.png', width=8, height=5, units='in')
 
 
 
