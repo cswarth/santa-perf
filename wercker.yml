@@ -12,7 +12,7 @@ build:
     - script:
         name: convert to html
         code: |
-          bin/plot_bokeh.py results.csv "$WERCKER_OUTPUT_DIR/index.html"
+          bin/plot_bokeh.py -t templates/template.jinja results.csv "$WERCKER_OUTPUT_DIR/index.html"
           cp dashboard.css "$WERCKER_OUTPUT_DIR/"
 
 #        - lukevivier/gh-pages:
