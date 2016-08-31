@@ -7,8 +7,8 @@
 
 [![Wercker Build Widget]][Wercker Application]
 
-![Grouped by population size](figures/bypopulation.png)
-![Grouped by sequence length](figures/byseqlen.png)
+![Grouped by population size](figures/bypopulation.svg =800x500)
+![Grouped by sequence length](figures/byseqlen.svg =800x500)
 
 ## Basic usage
 
