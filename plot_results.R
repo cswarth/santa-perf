@@ -44,5 +44,5 @@ ggplot(df, aes(x=population, y=time, color=flen, group=flen)) +
   labs(color = "Sequence len")
 ggsave(filename='byseqlen.png', width=8, height=5, units='in')
 
-
+cat('Output plots have been left in bypopulation.png and byseqlen.png.\n')
 
